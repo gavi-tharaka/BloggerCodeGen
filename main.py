@@ -11,7 +11,6 @@ html_code = '''
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Download Page</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -79,28 +78,10 @@ html_code = '''
     <p>{{description}}</p>
     <div class="content">
         <a href="{{redirectURL}}" download class="download-button" id="download-button">Download Full Movie</a>
-        <div class="countdown">Wait <span id="countdown">5</span> seconds...</div>
     </div>
 
     <script>
-        let countdownElement = document.getElementById('countdown');
-        let downloadButton = document.getElementById('download-button');
-        let countdown = 3;
-
-        const countdownInterval = setInterval(() => {
-            countdown--;
-            countdownElement.textContent = countdown;
-
-            if (countdown <= 0) {
-                clearInterval(countdownInterval);
-                downloadButton.classList.add('enabled');
-                downloadButton.style.cursor = 'pointer';
-                downloadButton.style.pointerEvents = 'auto';
-                setTimeout(() => {
-                    window.location.href = "{{redirectURL}}";
-                }, 1000); // Additional 1 second delay for UX clarity
-            }
-        }, 1000);
+        window.location.href = "{{redirectURL}}"
     </script>
 
 </body>
@@ -112,7 +93,6 @@ template = """
 <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Download Page</title>
         <style>
             body {
                 font-family: Arial, sans-serif;
@@ -216,7 +196,7 @@ def index():
     description = movie.get('plot outline')
     banner = movie.get_fullsizeURL()
     print(title)
-    html_Code = html_code.replace("{{poster}}", banner).replace("{{description}}", description).replace("{{redirectURL}}", random.choice(open("rederect.txt", 'r').readlines()).replace("/n",""))
+    html_Code = html_code.replace("{{poster}}", banner).replace("{{description}}", description).replace("{{redirectURL}}", random.choice(open("rederect.txt", 'r').readlines()).replace("\n", ""))
     return render_template_string(template, html_code=html_Code, title=title)
 
 
