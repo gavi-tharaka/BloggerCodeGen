@@ -1,7 +1,9 @@
 from flask import Flask, render_template_string, request
 import imdb
+import random
 from pyngrok import ngrok
 app = Flask(__name__)
+
 
 html_code = '''
 <!DOCTYPE html>
@@ -214,7 +216,7 @@ def index():
     description = movie.get('plot outline')
     banner = movie.get_fullsizeURL()
     print(title)
-    html_Code = html_code.replace("{{poster}}", banner).replace("{{description}}", description)
+    html_Code = html_code.replace("{{poster}}", banner).replace("{{description}}", description).replace("{{redirectURL}}", random.choice(open("rederect.txt", 'r').readlines()))
     return render_template_string(template, html_code=html_Code, title=title)
 
 
