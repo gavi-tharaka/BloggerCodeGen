@@ -85,13 +85,13 @@ html_code = '''
     <script>
         let countdownElement = document.getElementById('countdown');
         let downloadButton = document.getElementById('download-button');
-        let countdown = 5;
+        let countdown = 3;
 
         const countdownInterval = setInterval(() => {
             countdown--;
             countdownElement.textContent = countdown;
 
-            if (countdown >= 0) {
+            if (countdown <= 0) {
                 clearInterval(countdownInterval);
                 downloadButton.classList.add('enabled');
                 downloadButton.style.cursor = 'pointer';
