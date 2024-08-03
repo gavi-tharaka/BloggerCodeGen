@@ -216,7 +216,7 @@ def index():
     description = movie.get('plot outline')
     banner = movie.get_fullsizeURL()
     print(title)
-    html_Code = html_code.replace("{{poster}}", banner).replace("{{description}}", description).replace("{{redirectURL}}", random.choice(open("rederect.txt", 'r').readlines()))
+    html_Code = html_code.replace("{{poster}}", banner).replace("{{description}}", description).replace("{{redirectURL}}", random.choice(open("rederect.txt", 'r').readlines()).replace("/n",""))
     return render_template_string(template, html_code=html_Code, title=title)
 
 
