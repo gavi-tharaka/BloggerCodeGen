@@ -91,7 +91,7 @@ html_code = '''
             countdown--;
             countdownElement.textContent = countdown;
 
-            if (countdown <= 0) {
+            if (countdown >= 0) {
                 clearInterval(countdownInterval);
                 downloadButton.classList.add('enabled');
                 downloadButton.style.cursor = 'pointer';
