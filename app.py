@@ -28,7 +28,13 @@ user = Client('user_session',
 app = Flask(__name__)
 
 @app.route('/')
-def index():
+async def index():
+  await asyncio.gather(
+        bot.start(),
+        user.start(),
+        asyncio.to_thread(app.run, port=5000)
+    )
+
     return "Bot is running!"
 
 @app.route('/send_message/<int:chat_id>/<message>')
