@@ -1,3 +1,4 @@
 Flask
-IMDbPy
-pyngrok
+pyrogram
+TgCrypto
+gunicorn
