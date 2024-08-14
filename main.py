@@ -1,207 +1,123 @@
-from flask import Flask, render_template_string, request
-import imdb
-import random
-from pyngrok import ngrok
+import time
+
+from flask import Flask, request
+from threading import Thread
+from pyrogram import filters, Client
+
+# Bot and User configuration
+api_id = "7769505"
+api_hash = "33f551652408cce07cf7e7621560021a"
+bot_token = "7457733532:AAEcC_L4eKRagZIs4g5uq5JAhM7d8VXHKVE"
+URL = "http://127.0.0.1:5000"
+file_base_channel = -1002203067739
+file_url_bot = 2138323286
+# Initialize bot and user clients
+bot = Client('bot',
+             api_id=api_id,
+             api_hash=api_hash,
+             bot_token=bot_token,
+             workers=6
+             )
+
+user = Client('user_session',
+              api_id=api_id,
+              api_hash=api_hash,
+              workers=6
+              )
+
+# Flask app initialization
 app = Flask(__name__)
 
 
-html_code = '''
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f4f4f4;
-        }
-
-        .banner {
-            width: 100%;
-            max-width: 800px;
-            height: 300px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-
-        .banner img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .content {
-            text-align: center;
-        }
-
-        .download-button {
-            padding: 15px 25px;
-            font-size: 18px;
-            color: white;
-            background-color: #007bff;
-            border: none;
-            border-radius: 5px;
-            cursor: not-allowed;
-            text-decoration: none;
-            pointer-events: none;
-        }
-
-        .download-button.enabled {
-            cursor: pointer;
-            pointer-events: auto;
-            background-color: #007bff;
-        }
-
-        .download-button.enabled:hover {
-            background-color: #0056b3;
-        }
-
-        .countdown {
-            margin-top: 20px;
-            font-size: 16px;
-            color: #333;
-        }
-    </style>
-</head>
-<body>
-
-    <div class="banner">
-        <img src="{{poster}}" alt="Banner Image">
-    </div>
-    <p>{{description}}</p>
-    <div class="content">
-        <a href="{{redirectURL}}" download class="download-button" id="download-button">Download Full Movie</a>
-    </div>
-
-    <script>
-        window.location.href = "{{redirectURL}}"
-    </script>
-
-</body>
-</html>
-
-'''
-
-template = """
-<head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                margin: 0;
-                padding: 20px;
-                background-color: #f4f4f4;
-            }
-            .container {
-                max-width: 800px;
-                margin: 0 auto;
-                padding: 20px;
-                background: #fff;
-                border-radius: 8px;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            }
-            h1 {
-                text-align: center;
-            }
-            .form-group {
-                margin-bottom: 15px;
-            }
-            label {
-                display: block;
-                margin-bottom: 5px;
-            }
-            input[type="text"] {
-                width: calc(100% - 22px);
-                padding: 10px;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-            }
-            button {
-                background-color: #007bff;
-                color: #fff;
-                border: none;
-                padding: 10px 20px;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 16px;
-            }
-            button:hover {
-                background-color: #0056b3;
-            }
-            textarea {
-                width: 100%;
-                height: 150px;
-                margin-top: 20px;
-                padding: 10px;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                font-family: monospace;
-                background: #f9f9f9;
-                resize: none;
-            }
-            .code-container {
-                margin-top: 20px;
-            }
-            .code-container pre {
-                white-space: pre-wrap;
-            }
-        </style>
-    </head>
-<!-- HTML form to input download link and image link -->
-<body>
-        <div class="container">
-            <h1>Generate Download Page HTML</h1>
-            <form method="get" action="">
-                <div class="form-group">
-                    <label for="downloadLink">Movie Name :  </label>
-                    <input type="text" id="downloadLink" name="name" required value="{{title}}">
-                </div>
-                <button type="submit">Generate HTML</button>
-            </form>
-            <textarea id="code" rows="10" cols="50">{{html_code}}</textarea>
-            <button onclick="copyToClipboard()">Copy to Clipboard</button>
-        </div>
-    <script>
-    function copyToClipboard() {
-        var code = document.getElementById("code");
-        code.select();
-        document.execCommand("copy");
-        alert("HTML code copied to clipboard!");
-    }
-    </script>
-</body>
-"""
-
-
+# Define a route for the Flask app
 @app.route('/')
 def index():
-    # Initialize the IMDb object
-    movie_name = request.args.get('name', default="the 100")
-    ia = imdb.IMDb()
-    mId = ia.search_movie(movie_name)[0].movieID
-    movie = ia.get_movie(mId)
-    year = movie['year']
-    title = movie.get('title')
-
-    if year:
-        title = title + f' ({year})'
-    description = movie.get('plot outline')
-    banner = movie.get_fullsizeURL()
-    print(title)
-    html_Code = html_code.replace("{{poster}}", banner).replace("{{description}}", description).replace("{{redirectURL}}", random.choice(open("rederect.txt", 'r').readlines()).replace("\n", ""))
-    return render_template_string(template, html_code=html_Code, title=title)
+    return "Bot is running!"
 
 
-if __name__ == '__main__':
-    ngrok.set_auth_token("2k7XmxwTv7XmK9QLN6zCUXIHRGU_3gKNZYQkdQpJuzjX5uX5M")
-    ngrok_tunnel = ngrok.connect(5000)
-    print('Public URL:', ngrok_tunnel.public_url)
-    app.run()
+@app.route('/send_message/<int:chat_id>/<message>')
+def send_message(chat_id, message):
+    # Send a message using the bot
+    bot.send_message(chat_id, message)
+    return f"Message sent to chat_id {chat_id}: {message}"
+
+
+@app.route('/download')
+def download():
+    # Capture the file_id from the query parameter
+    file_id = request.args.get('file_id')
+    change_url = None
+
+    if not file_id:
+        return "No file_id provided!", 400
+    searched = user.search_messages(file_base_channel, query=f"file_id: {file_id}", limit=1)
+    if searched:
+        for i in searched:
+            user.copy_message(file_url_bot, i.chat.id, i.id)
+            time.sleep(1)
+
+        for i in user.search_messages(file_url_bot, query=f"", limit=1):
+            message = i
+            given_url = message.text
+            given_url = given_url[given_url.index("📥 Download: ") + 15:]
+            given_url = given_url[:given_url.index("\n")]
+
+            change_url = given_url.replace("https://dl.springsfern.in/","https://api.springsfern.in/")
+            change_url = change_url[:change_url.index("?mime=")]
+
+            """https://api.springsfern.in/dl/611736/Locke.and.Key.S01E09.WEBRip-[CineSubz.com]-720p.mp4"""
+            """https://dl.springsfern.in/dl/611736/Locke.and.Key.S01E09.WEBRip-%5BCineSubz.com%5D-720p.mp4?mime=video/mp4&size=307392640"""
+
+            time.sleep(1)
+        return f"Captured file_id: {change_url}"
+    else:
+        return "Not file found"
+
+
+# Bot event handler
+@bot.on_message(filters.private & filters.command(['start']))
+def welcome(_, message):
+    bot.send_message(message.chat.id, "Welcome! The bot is connected to a Flask app.")
+
+
+# Bot file handler
+@bot.on_message(filters.private & filters.document | filters.photo | filters.video | filters.audio)
+def document(_, message):
+    print(message)
+    if message.document:
+        pass
+    elif message.photo:
+        message.document = message.photo
+    elif message.video:
+        message.document = message.video
+    elif message.audio:
+        message.document = message.audio
+
+    bot.copy_message(file_base_channel, message.chat.id, message.id,
+                     caption="file_id: " + str(message.document.file_unique_id))
+    text = URL + f"/download?file_id={message.document.file_unique_id}"
+    bot.send_message(message.chat.id, text)
+
+
+# Function to run Flask in a separate thread
+def run_flask():
+    app.run(port=5000)
+
+
+# Run the Flask app in a separate thread
+if __name__ == "__main__":
+    flask_thread = Thread(target=run_flask)
+    flask_thread.start()
+
+    # Start bot in the main thread and keep it running
+    bot.start()
+    user.start()
+
+    # Block the main thread with idle to keep bot running
+    from pyrogram import idle
+
+    idle()
+
+    # Stop bot and user clients when exiting
+    bot.stop()
+    user.stop()
